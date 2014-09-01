@@ -30,5 +30,5 @@ class Module:
         if 'return_object' in options and options['return_object']:
             return result
 
-        return str(result.read())
+        return result.read().decode('utf8')
 
