@@ -1,5 +1,5 @@
 import urllib
-from http import client
+import urllib.request
 
 class Module:
     def __init__(self):
@@ -15,6 +15,9 @@ class Module:
         return self.__call('post', url, data=data, **options)
 
     def __call(self, method, url, data=None, **options):
+        if 'page' in options:
+            url = '%s/%s' (url, options['page'])
+
         if data:
             data = urllib.parse.urlencode(data).encode('ascii')
 
