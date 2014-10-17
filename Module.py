@@ -1,5 +1,6 @@
 from core import Log
 
+import time
 import urllib
 import urllib.request
 
@@ -26,14 +27,27 @@ class Module:
 
         request = urllib.request.Request(url, data)
         request.get_method = lambda : method.upper()
-        request.add_header('User-Agent','Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)')
+        request.add_header('User-Agent', 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)')
         request.add_header('Referer', url)
 
         Log.debug('http_lib : %s %s' % (method, url))
-        result = urllib.request.urlopen(request, timeout=self.timeout)
+        start = time.time()
 
-        if 'return_object' in options and options['return_object']:
-            return result
+        try:
+            response = urllib.request.urlopen(request, timeout=self.timeout)
+            
+            end = time.time()
+            html = response.read().decode('utf8')
+            http_code = response.status
 
-        return result.read().decode('utf8')
+        except urllib.error.HTTPError as e:
+            end = time.time()
+            html = e.reason
+            http_code = e.getcode()
+
+        return {
+            'response_time': end - start,
+            'html': html,
+            'code': http_code,
+        }
 
