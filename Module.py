@@ -1,5 +1,6 @@
 from core import Log
 
+import json
 import time
 import urllib
 import urllib.request
@@ -12,11 +13,20 @@ class Module:
     def get(self, url, **options):
         return self.__call('get', url, **options)
 
+    def get_json(self, *args, **kwargs):
+        return self.__json('get',*args, **kwargs)
+
     def head(self, url, **options):
         return self.__call('head', url, **options)
 
+    def head_json(self, *args, **kwargs):
+        return self.__json('head',*args, **kwargs)
+
     def post(self, url, data, **options):
         return self.__call('post', url, data=data, **options)
+
+    def post_json(self, *args, **kwargs):
+        return self.__json('post',*args, **kwargs)
 
     def __call(self, method, url, data=None, **options):
         if 'page' in options:
@@ -35,7 +45,7 @@ class Module:
 
         try:
             response = urllib.request.urlopen(request, timeout=self.timeout)
-            
+
             end = time.time()
             html = response.read().decode('utf8')
             http_code = response.status
@@ -50,4 +60,11 @@ class Module:
             'html': html,
             'code': http_code,
         }
+
+    def __json(self, method, *args, **kwargs):
+        try:
+            return json.loads(getattr(self, method)(*args, **kwargs)['html'])
+
+        except TypeError:
+            return {}
 
