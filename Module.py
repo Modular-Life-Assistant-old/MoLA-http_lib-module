@@ -1,6 +1,7 @@
 from core import Log
 
 import json
+import os
 import time
 import urllib
 import urllib.request
@@ -47,8 +48,20 @@ class Module:
             response = urllib.request.urlopen(request, timeout=self.timeout)
 
             end = time.time()
-            html = response.read().decode('utf8')
             http_code = response.status
+
+            if 'download_path' in options:
+                html = ''
+                dir_path = os.path.dirname(options['download_path'])
+
+                if not os.path.exists(dir_path):
+                    os.makedirs(dir_path)
+
+                with open(options['download_path'], 'wb') as f:
+                    f.write(response.read())
+
+            else:
+                html = response.read().decode('utf8')
 
         except urllib.error.HTTPError as e:
             end = time.time()
@@ -59,6 +72,7 @@ class Module:
             'response_time': end - start,
             'html': html,
             'code': http_code,
+            'headers': dict(response.getheaders())
         }
 
     def __json(self, method, *args, **kwargs):
