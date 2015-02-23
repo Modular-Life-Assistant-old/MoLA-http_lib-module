@@ -53,5 +53,5 @@ coverage.xml
 docs/_build/
 
 #MoLA module
-disable
+disabled
 
