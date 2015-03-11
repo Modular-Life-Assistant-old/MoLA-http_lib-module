@@ -49,6 +49,7 @@ class Module:
 
             end = time.time()
             http_code = response.status
+            headers = dict(response.getheaders())
 
             if 'download_path' in options:
                 html = ''
@@ -67,12 +68,13 @@ class Module:
             end = time.time()
             html = e.reason
             http_code = e.getcode()
+            headers = {}
 
         return {
             'response_time': end - start,
             'html': html,
             'code': http_code,
-            'headers': dict(response.getheaders())
+            'headers': headers,
         }
 
     def __json(self, method, *args, **kwargs):
