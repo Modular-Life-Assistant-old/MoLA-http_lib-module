@@ -61,10 +61,10 @@ class Module(Component):
             url = '%s/%s' (url, kwargs['page'])
 
         if data:
-            data = urllib.parse.urlencode(data).encode('ascii')
+            encoded_data = urllib.parse.urlencode(data).encode('ascii')
 
-        request = urllib.request.Request(url, data)
-        request.get_method = lambda : method.upper()
+        request = urllib.request.Request(url, encoded_data)
+        request.get_method = lambda: method.upper()
 
         # set headers
         headers = kwargs.get('headers', {
@@ -105,6 +105,18 @@ class Module(Component):
             http_code = e.getcode()
             headers = {}
 
+        except urllib.error.URLError as e:
+            if kwargs.get('retry', 0) > 0:
+                if 'retry_delay' not in kwargs:
+                    kwargs['retry_delay'] = 2
+
+                time.sleep(kwargs['retry_delay'])
+                kwargs['retry_delay'] *= 2
+                kwargs['retry'] -= 1
+
+                return self.__call(method, url, data=data, **kwargs)
+            raise e
+
         return {
             'response_time': end - start,
             'html': html,
@@ -116,7 +128,7 @@ class Module(Component):
         try:
             return json.loads(getattr(self, method)(*args, **kwargs)['html'])
 
-        except TypeError as e:
+        except TypeError as e:  # not json result
             return {
                 'error': str(e)
             }
