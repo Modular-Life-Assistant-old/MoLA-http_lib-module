@@ -1,5 +1,7 @@
 from core import Log
+from core.decorator import async
 
+from circuits import Component
 import json
 import os
 import time
@@ -7,58 +9,91 @@ import urllib
 import urllib.request
 
 
-class Module:
-    def __init__(self):
-        self.timeout = 5
+class Module(Component):
+    timeout = 5
 
-    def get(self, url, **options):
-        return self.__call('get', url, **options)
+    @async
+    def get(self, url, **kwargs):
+        return self.get_sync(url, **kwargs)
 
-    def get_json(self, *args, **kwargs):
-        return self.__json('get',*args, **kwargs)
+    @async
+    def get_json(self, url, **kwargs):
+        return self.__json('get_sync', url, **kwargs)
 
-    def head(self, url, **options):
-        return self.__call('head', url, **options)
+    def get_sync(self, url, **kwargs):
+        return self.__call('get', url, **kwargs)
 
-    def head_json(self, *args, **kwargs):
-        return self.__json('head',*args, **kwargs)
+    @async
+    def head(self, url, **kwargs):
+        return self.head_sync(url, **kwargs)
 
-    def post(self, url, data, **options):
-        return self.__call('post', url, data=data, **options)
+    @async
+    def head_json(self, url, **kwargs):
+        return self.__json('head_sync', url, **kwargs)
 
-    def post_json(self, *args, **kwargs):
-        return self.__json('post',*args, **kwargs)
+    def head_sync(self, url, **kwargs):
+        return self.__call('head', url, **kwargs)
 
-    def __call(self, method, url, data=None, **options):
-        if 'page' in options:
-            url = '%s/%s' (url, options['page'])
+    @async
+    def post(self, url, data, **kwarg):
+        return self.post_sync(url, data, **kwarg)
+
+    @async
+    def post_json(self, url, data, **kwarg):
+        return self.__json('post_sync', url, data, **kwarg)
+
+    def post_sync(self, url, data, **kwargs):
+        return self.__call('post', url, data=data, **kwargs)
+
+    @async
+    def put(self, url, data, **kwargs):
+        return self.put_sync(url, data, **kwargs)
+
+    @async
+    def put_json(self, url, data, **kwargs):
+        return self.__json('put_sync', url, data, **kwargs)
+
+    def put_sync(self, url, data, **kwargs):
+        return self.__call('put', url, data=data, **kwargs)
+
+    def __call(self, method, url, data=None, **kwargs):
+        if 'page' in kwargs:
+            url = '%s/%s' (url, kwargs['page'])
 
         if data:
             data = urllib.parse.urlencode(data).encode('ascii')
 
         request = urllib.request.Request(url, data)
         request.get_method = lambda : method.upper()
-        request.add_header('User-Agent', 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)')
-        request.add_header('Referer', url)
+
+        # set headers
+        headers = kwargs.get('headers', {
+            'User-Agent': 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)',
+            'Referer': url,
+        })
+
+        for header in headers:
+            request.add_header(header, headers[header])
 
         Log.debug('http_lib : %s %s' % (method, url))
         start = time.time()
 
         try:
-            response = urllib.request.urlopen(request, timeout=self.timeout)
+            timeout = kwargs.get('timeout', self.timeout)
+            response = urllib.request.urlopen(request, timeout=timeout)
 
             end = time.time()
             http_code = response.status
             headers = dict(response.getheaders())
 
-            if 'download_path' in options:
+            if 'download_path' in kwargs:
                 html = ''
-                dir_path = os.path.dirname(options['download_path'])
+                dir_path = os.path.dirname(kwargs['download_path'])
 
                 if not os.path.exists(dir_path):
                     os.makedirs(dir_path)
 
-                with open(options['download_path'], 'wb') as f:
+                with open(kwargs['download_path'], 'wb') as f:
                     f.write(response.read())
 
             else:
@@ -81,6 +116,7 @@ class Module:
         try:
             return json.loads(getattr(self, method)(*args, **kwargs)['html'])
 
-        except TypeError:
-            return {}
-
+        except TypeError as e:
+            return {
+                'error': str(e)
+            }
