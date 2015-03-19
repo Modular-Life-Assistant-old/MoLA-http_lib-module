@@ -60,8 +60,8 @@ class Module(Component):
         if 'page' in kwargs:
             url = '%s/%s' (url, kwargs['page'])
 
-        if data:
-            encoded_data = urllib.parse.urlencode(data).encode('ascii')
+        encoded_data = urllib.parse.urlencode(data).encode('ascii') if data \
+            else None
 
         request = urllib.request.Request(url, encoded_data)
         request.get_method = lambda: method.upper()
