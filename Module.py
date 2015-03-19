@@ -126,9 +126,11 @@ class Module(Component):
 
     def __json(self, method, *args, **kwargs):
         try:
-            return json.loads(getattr(self, method)(*args, **kwargs)['html'])
+            result = getattr(self, method)(*args, **kwargs)
+            return json.loads(result['html'])
 
-        except TypeError as e:  # not json result
+        except (TypeError, ValueError) as e:  # not json result
             return {
-                'error': str(e)
+                'error': str(e),
+                'result': result,
             }
