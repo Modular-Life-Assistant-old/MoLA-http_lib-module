@@ -10,6 +10,7 @@ import urllib.request
 
 
 class Module(Component):
+    channel = 'http'
     timeout = 5
 
     @async
@@ -63,6 +64,7 @@ class Module(Component):
         encoded_data = urllib.parse.urlencode(data).encode('ascii') if data \
             else None
 
+        Log.debug('http_lib : %s %s' % (method, url))
         request = urllib.request.Request(url, encoded_data)
         request.get_method = lambda: method.upper()
 
@@ -70,12 +72,11 @@ class Module(Component):
         headers = kwargs.get('headers', {
             'User-Agent': 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)',
             'Referer': url,
-        })
+            })
 
         for header in headers:
             request.add_header(header, headers[header])
 
-        Log.debug('http_lib : %s %s' % (method, url))
         start = time.time()
 
         try:
@@ -122,7 +123,7 @@ class Module(Component):
             'html': html,
             'code': http_code,
             'headers': headers,
-        }
+            }
 
     def __json(self, method, *args, **kwargs):
         try:
