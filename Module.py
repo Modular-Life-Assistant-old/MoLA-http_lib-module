@@ -106,6 +106,7 @@ class Module(Component):
             headers = {}
 
         except urllib.error.URLError as e:
+            Log.debug('http_lib: URLError: %s' % str(e))
             if kwargs.get('retry', 0) > 0:
                 if 'retry_delay' not in kwargs:
                     kwargs['retry_delay'] = 2
@@ -115,7 +116,7 @@ class Module(Component):
                 kwargs['retry'] -= 1
 
                 return self.__call(method, url, data=data, **kwargs)
-            raise e
+            raise
 
         return {
             'response_time': end - start,
